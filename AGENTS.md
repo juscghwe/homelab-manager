@@ -6,6 +6,7 @@ Build a modular Git-native Linux/Docker deployment and network-access manager. B
 ## Document authority
 - `docs/INTENT.md`: product scope and non-goals.
 - `docs/DESIGN.md`: architecture and allowed responsibilities.
+- `docs/SECURITY.md`: authorization, privilege boundaries and recovery requirements.
 - `docs/DATA_MODEL.md`: terminology, states and source/authority distinctions.
 - `docs/PROTOCOL.md`: agent-controller and deployment semantics.
 - `docs/ACCEPTANCE.md`: observable V1 completion criteria.
@@ -33,3 +34,27 @@ Do not silently change an architectural invariant. When a requirement is ambiguo
 - For every PR: state the change, threat-model impact, changed public interfaces, tests run, and known limitations.
 - Privileged integration tests must run only in disposable test environments; never point tests at real homelab infrastructure.
 - Never claim a feature, rollback, reachability result, or end-to-end test is working without verifying it.
+
+## Git contribution rules
+
+### Branches
+- Never implement changes directly on `main` or `master`. Use the task's existing isolated branch when Codex supplies one; otherwise create a descriptive branch such as `docs/architecture-review`, `feat/agent-git-core`, or `fix/firewall-validation` before editing.
+- Use the existing isolated cloud checkout; do not create an additional Git worktree unless the user explicitly requests it. This contribution rule does not select the application's future candidate-staging implementation.
+- Keep one coherent concern per branch and PR. Do not combine unrelated modules or unrelated formatting/refactoring.
+- Inspect status before editing; preserve pre-existing changes and unpublished commits. Never reset or overwrite them to obtain a clean tree.
+
+### Commits
+- Use Conventional Commits, for example `docs: clarify deployment state ownership`. Keep commits atomic and understandable.
+- Review the diff and stage only relevant, explicit paths; avoid indiscriminate staging.
+- Do not amend or rewrite existing shared history. Never force-push to protected branches.
+- Do not commit credentials, secrets, generated temporary data or local environment settings.
+
+### Pull requests and integration
+- Target `main` unless the repository explicitly defines another integration branch. Use a descriptive title explaining the purpose.
+- Explain what changed and why, affected architectural contracts/public interfaces, security implications, known limitations and the relevant plan document.
+- State which checks actually ran and their outcomes; distinguish failed, skipped and unrun checks. A successful build does not establish architectural correctness.
+- Respect every affected module's `AGENTS.md`. Do not invent results or claim unverified functionality.
+- Require explicit human review before merging changes to authorization, privilege boundaries, deployment semantics or firewall execution. Do not automatically merge any PR.
+- For documentation work, validate relative references, run `git diff --check`, inspect the changed-file list, and confirm the working tree after committing. If unrelated user changes exist, report them rather than deleting them.
+
+The current architecture audit and approval gates are in [0001-architecture-readiness](docs/plans/0001-architecture-readiness.md). Open decisions are not implementation authorization.
