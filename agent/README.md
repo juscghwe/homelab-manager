@@ -62,12 +62,22 @@ Decoding checks syntax/duplicate keys in document order, then schema shape. Vali
 
 ## Tests
 
-From `agent/`, with Go 1.27.2 on Linux:
+Install Go 1.27.2 and development build tools on Linux. On Debian/Ubuntu:
+
+```sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends build-essential
+```
+
+From the repository root, run `agent/scripts/check.sh`. It checks formatting without rewriting files (`gofmt -l`), runs standard-library static analysis (`go vet`), unit tests, CGO-enabled race tests, and a CGO-disabled build. The GitHub Actions agent workflow runs this same script on pushes and pull requests. GCC/build tools are development-only dependencies; registration builds with `CGO_ENABLED=0` and does not require them at runtime.
+
+Individual checks from `agent/`:
 
 ```sh
 go test ./...
 go vet ./...
-go test -race ./...
+CGO_ENABLED=1 go test -race ./...
+CGO_ENABLED=0 go build ./...
 ```
 
 The race detector requires cgo and a working C compiler. Tests use only temporary directories and synthetic data; they do not invoke Git, contact remotes or access actual host registration/Docker/firewall state. Coverage includes schema ambiguity, capability defaults, multiple repos/stacks/shared inputs, normalized duplicates, deterministic errors, traversal/symlinks, FIFO rejection, unreadable input files, error redaction and snapshot isolation. A `FuzzDecode` target exercises bounded JSON parsing separately from filesystem validation.
