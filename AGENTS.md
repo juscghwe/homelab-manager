@@ -38,6 +38,7 @@ Do not silently change an architectural invariant. When a requirement is ambiguo
 ## Git contribution rules
 
 ### Branches
+- `juscghwe/homelab-manager` is the sole canonical target; forks are not authoritative. Preserve the existing milestone branch and use its actual current tip as the development baseline.
 - Never implement changes directly on `main`, `master`, or a milestone integration branch. Create topic branches from the applicable `milestone/<number>-<kebab-case-goal>` branch; reuse an existing branch for the same concern rather than creating parallel replacements. An environment-supplied generic branch must be renamed before publishing.
 - Use the existing isolated cloud checkout; do not create an additional Git worktree unless the user explicitly requests it. This contribution rule does not select the application's future candidate-staging implementation.
 - Topic branch types are `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`, and `chore`. Use `<type>/<kebab-case-subject>` for topic branches and `<type>: <subject>` for commit subjects and PR titles. Reserve `milestone/<number>-<kebab-case-goal>` for integration branches and `milestone: <subject>` for milestone integration PRs and their merge commits. `main` is the stable integration destination, not a topic branch.
@@ -47,13 +48,15 @@ Do not silently change an architectural invariant. When a requirement is ambiguo
 - Inspect status before editing; preserve pre-existing changes and unpublished commits. Never reset or overwrite them to obtain a clean tree.
 
 ### Commits
+- Before remote mutations, verify `gh api /user --jq .login` returns `juscghwe-codex`. New commits use `juscghwe-codex <340593538+juscghwe-codex@users.noreply.github.com>` for both author and committer; never fall back to personal-account credentials.
 - Use the shared typed subject convention above (including `milestone` for milestone completion), for example `docs: clarify deployment state ownership`. Keep commits atomic and understandable.
 - Review the diff and stage only relevant, explicit paths; avoid indiscriminate staging.
 - Do not amend or rewrite existing shared history. Never force-push to protected branches.
 - Do not commit credentials, secrets, generated temporary data or local environment settings.
 
 ### Pull requests and integration
-- Topic PRs target their documented milestone branch, not `main` or another topic branch. Use `<type>: <subject>` for the PR title, matching the branch's overall type and purpose. Only a reviewed milestone integration PR targets `main`, with a `milestone: <subject>` title.
+- Topic PRs target their documented milestone branch, not `main`. A genuine unmerged prerequisite may temporarily use a clearly documented stacked PR against its predecessor branch. After the predecessor merges, retarget/reconcile the child to the milestone without force-pushing shared history, verify its intended-only diff and rerun affected checks. Use `<type>: <subject>` titles matching the overall concern. Only the complete, reviewed milestone integrates into `main`, with a `milestone: <subject>` title.
+- Maintain the umbrella issue and [M1 delivery plan](docs/plans/0003-milestone-1-delivery.md) as the scope/dependency/acceptance map. The existing milestone branch is the cumulative bundle; reuse any aggregate draft PR and never merge it before milestone completion. Keep individual feature PRs as the review units.
 - Reuse the existing PR for the concern. After integration, delete its merged topic branch; after milestone completion, delete the merged milestone branch once no open PR depends on it. Do not delete unmerged work or create duplicate replacement branches/PRs.
 - Explain what changed and why, affected architectural contracts/public interfaces, security implications, known limitations and the relevant plan document.
 - State which checks actually ran and their outcomes; distinguish failed, skipped and unrun checks. A successful build does not establish architectural correctness.

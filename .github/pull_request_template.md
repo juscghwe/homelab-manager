@@ -33,6 +33,8 @@ State whether this was verified or remains unimplemented/unrun.
 ## Integration
 
 - Target milestone branch and plan: (current: `milestone/1-agent-git-core`; see `docs/PLANS.md`). Topic PRs target the milestone; only reviewed milestone integration PRs target `main`.
+- Umbrella issue, M1 unit, prerequisite PRs and merge status:
+- If temporarily stacked: predecessor PR/base, milestone retargeting steps and intended-only diff verification:
 - Keep one coherent concern and stage only relevant files.
 - Use `<type>/<kebab-case-subject>` for topic branches and `<type>: <subject>` for commit subjects and PR titles (`feat`, `fix`, `docs`, etc.). Reserve `milestone/<number>-<goal>` and `milestone: <subject>` for milestone integration. Branch and PR types describe the overall concern; related `fix:`, `test:`, and `docs:` commits may stay on a `feat/...` branch.
 - Reuse the existing branch/PR for the concern; no generic `work` branches or duplicate replacements. Delete merged topic branches after integration, preserving unmerged work and branches with open dependent PRs.
