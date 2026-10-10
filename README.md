@@ -22,6 +22,7 @@ Git-native, modular management of Linux hosts, Docker Compose deployments, and n
 6. [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) — required tests for V1.
 7. [`docs/PLANS.md`](docs/PLANS.md) — implementation sequencing for Codex.
 8. [`docs/plans/0001-architecture-readiness.md`](docs/plans/0001-architecture-readiness.md) — audit findings, invariant coverage and decisions requiring approval.
+9. [`docs/plans/0003-milestone-1-delivery.md`](docs/plans/0003-milestone-1-delivery.md) — umbrella reference, six M1 feature PRs, dependencies and acceptance gates.
 
 Agent instructions live in [`AGENTS.md`](AGENTS.md) and module-level `AGENTS.md` files.
 

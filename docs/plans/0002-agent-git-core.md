@@ -4,6 +4,8 @@ Status: proposed implementation plan under approved D5/D6/D7 intent; documentati
 
 ## First slice and boundaries
 
+The [M1 delivery plan](0003-milestone-1-delivery.md) separates registration, inspection engine, status CLI, stack state, preparation engine and preparation CLI into M1-A through M1-F. Each PR targets the existing milestone integration branch (with documented temporary stacks only for unmerged dependencies). Review this planning bundle before starting implementation; prerequisite contracts already exist on the milestone and need not be recovered into `main`.
+
 Implement local/read-only Git status first using a small Go binary and system Git subprocesses. Prefer the standard library for JSON, argument parsing and process execution. No embedded Git library, Docker connection, privileged helper, controller or daemon is needed. Pin a maintained Go release in the implementation PR. Systemd only becomes relevant to optional background operation, not CLI invocation.
 
 Read [agent instructions](../../agent/AGENTS.md), [SECURITY](../SECURITY.md), [DATA_MODEL](../DATA_MODEL.md) and the [approved decisions](0001-architecture-readiness.md#maintainer-decisions-and-remaining-approval-gates). Proposed public spellings below can be refined in implementation review without reopening the approved product architecture. Privileged apply and remote authentication remain separate reviewed work.
