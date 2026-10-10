@@ -1,6 +1,6 @@
 # Milestone 1 — delivery and review plan
 
-Status: planning only; M1-A through M1-F are not implemented. The umbrella issue linked below is the permanent project-level checklist. This plan defines review units, not new approval of proposed mechanisms in [plan 0002](0002-agent-git-core.md).
+Status: planning approved in PR #7; M1-A registration is implemented for review in its feature branch. M1-B through M1-F remain unimplemented. See the [M1-A implementation plan](0004-agent-registration.md) and [agent guide](../../agent/README.md). The umbrella issue linked below is the permanent checklist; proposed mechanisms in [plan 0002](0002-agent-git-core.md) retain their individual review gates.
 
 Permanent tracking bundle: [Milestone 1 — Agent Git Core](https://github.com/juscghwe/homelab-manager/issues/6). Update its child-PR checklist when work starts, changes base or merges.
 
@@ -8,7 +8,7 @@ Permanent tracking bundle: [Milestone 1 — Agent Git Core](https://github.com/j
 
 Deliver the unprivileged Go/system-Git core in six cohesive feature PRs: registration, Git inspection, status interface, stack state, immutable preparation, and preparation interface. Include tests and affected contracts in each unit. Standalone CLI use must not require a controller, UI, daemon, hosted Git product, Docker, or root.
 
-Non-goals: Docker or firewall execution, deployment-success writers, privileged installation, remote API/enrollment, controller, UI, update discovery, arbitrary content diff output, and real-infrastructure tests. Preparation never means deployed. No implementation begins in this planning task; maintainer review is the next step.
+Non-goals: Docker or firewall execution, deployment-success writers, privileged installation, remote API/enrollment, controller, UI, update discovery, arbitrary content diff output, and real-infrastructure tests. Preparation never means deployed. The planning task is complete; each implementation unit is separately authorized and reviewed.
 
 ## Canonical baseline and integration
 
@@ -40,7 +40,7 @@ Preserve dirty edits and unpublished commits; keep HEAD, advertised remote, cand
 
 ## Feature PR map
 
-All PR numbers below remain unassigned until the corresponding feature is started. Do not create empty implementation PRs or branches merely to populate the checklist. Each PR uses a small number of atomic Conventional Commits; supporting `fix:`, `test:`, and `docs:` commits may stay on its `feat/...` branch.
+Actual feature PR references are maintained in the umbrella issue. Do not create empty implementation PRs or branches merely to populate the checklist. Each PR uses a small number of atomic Conventional Commits; supporting `fix:`, `test:`, and `docs:` commits may stay on its `feat/...` branch.
 
 | Unit / suggested branch | Components and interface | Prerequisites | Required checks and review boundary |
 | --- | --- | --- | --- |

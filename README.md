@@ -2,7 +2,7 @@
 
 Git-native, modular management of Linux hosts, Docker Compose deployments, and network access policies.
 
-> **Status: architecture scaffold only.** No production implementation or tested privileged operations exist yet.
+> **Status: M1-A registration library implemented for review.** The unprivileged Go library loads and validates local JSON registration. Git inspection, CLI commands, deployment and privileged operations are not implemented.
 
 ## Deployment profiles
 
@@ -23,6 +23,7 @@ Git-native, modular management of Linux hosts, Docker Compose deployments, and n
 7. [`docs/PLANS.md`](docs/PLANS.md) — implementation sequencing for Codex.
 8. [`docs/plans/0001-architecture-readiness.md`](docs/plans/0001-architecture-readiness.md) — audit findings, invariant coverage and decisions requiring approval.
 9. [`docs/plans/0003-milestone-1-delivery.md`](docs/plans/0003-milestone-1-delivery.md) — umbrella reference, six M1 feature PRs, dependencies and acceptance gates.
+10. [`agent/README.md`](agent/README.md) — implemented registration schema, loader API, path/security limits and Go tests.
 
 Agent instructions live in [`AGENTS.md`](AGENTS.md) and module-level `AGENTS.md` files.
 
