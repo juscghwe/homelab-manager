@@ -13,6 +13,7 @@ Graphical client of the headless API: host/stack status, Git-backed configuratio
 - Unmanaged devices and modeled restrictions are permanent baseline; toggling preview only adds/removes proposed deltas.
 - Show source host, affected protocol/port and confidence/provenance for each connectivity result.
 - Require explicit confirmation for runtime mutation; show whether action means Git commit, approved revision, or actual host apply.
+- Edit manual topology as structured Git files through backend Git-provider operations; support the local-Git adapter when no hosting is configured. Persisting requires a Git commit, independently of runtime apply. No controller database becomes topology authority.
 - Never show secret contents, `.env` values or raw Docker inspection environment data.
 
 ## Tests

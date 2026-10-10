@@ -4,7 +4,7 @@
 - `Host`: stable identity, managed/unmanaged status, discovered interfaces/routes and optional agent ID.
 - `Network`: network segment or user-declared logical group; avoid interpreting logical membership as physical bridging/VLAN connectivity.
 - `Device`: router, switch, Linux host or other modelled component. May be discovered, manually entered, agent-managed or Git sourced.
-- `Stack`: host + repository + tracked branch/ref + path + Compose project name. Multiple stacks can share one repository and a host can reference many repositories.
+- `Stack`: host + repository + tracked branch/ref + configuration path + Compose project name + explicit tracked inputs (including declared shared files). Multiple stacks can share one repository and a host can reference many repositories.
 - `PolicySource`: `agent`, `git_independent`, `discovered_unmanaged`, or `manual`. Source is distinct from `can_edit_git` and `can_apply_runtime`.
 - `AccessRule`: source, destination, direction, protocol, port ranges, action, provenance, authority status; explicit rule order/semantics when known.
 - `Annotation`: manually authored edge/group/label; no implied connectivity or service dependency.
@@ -17,12 +17,18 @@ These are semantic fields, not a finalized serialization schema. A stack referen
 - `git.remote_head`: advertised remote commit, or unavailable.
 - `git.dirty`: tracked staged/unstaged changes or non-ignored untracked files in the registered repository; report categories without leaking contents. Shared repositories have repository-wide conflict checks. Ignored local secrets/data are not candidate configuration.
 - `git.applied_revision`: last successfully applied tracked revision for the host/stack, owned by the agent journal; unknown/absent before a verified successful deployment. Status, fetch and stage never advance it. Stacks sharing a checkout can have different applied revisions.
-- `compose.desired_hash`: sanitized effective service configuration fingerprint when inspect capability enabled.
-- `compose.running_hash`: observed Compose hash/label when available, with caveat that not all runtimes expose it.
+- `git.staged_revision`: exact prepared candidate commit, separate from active HEAD and applied revision.
+- `config.tracked_identity`: versioned identity of declared non-secret tracked inputs and registration scope, or unavailable/uncertain with a reason; no Docker inspection required.
+- `compose.desired_hash`: optional identity only when inputs are proven safe; never resolve/read/hash secret contents for centralized status.
+- `compose.running_hash`: optional observed configuration identity only if safely obtainable and its input provenance excludes secrets. Opaque Compose hashes with unknown/secret-derived inputs must not be published.
 - `container.image_id`: running image content identity when Docker read capability enabled; registry digest may be additional metadata.
 - `runtime.state`, `runtime.health` and `runtime.metrics`: optional, only when enabled.
 
 Attach scope, observation time and availability/error information. An unavailable remote, absent applied record, unborn local branch or disabled runtime capability is not an empty successful result. An old remote observation may be retained only as explicitly stale. A desired Git commit, local HEAD, staged candidate and applied revision are distinct; runtime evidence remains separate. Never reconstruct deployment success from HEAD alone.
+
+Runtime status distinguishes command execution outcome, observed container state, configured health verdict (`passed`, `failed`, `not_configured`, `unavailable`) and confirmation outcome. Applied revision advances only after required checks/confirmation, never on Compose exit zero alone. A `not_configured` health verdict must remain visible even when execution is confirmed.
+
+Manual topology records have a stable ID, semantic source category, Git document/revision provenance and separate effective edit/apply permissions. `manual` describes who maintains a rule even when Git stores it; `git_independent` describes an independent Git source without an agent. Capability claims inside YAML never authorize helpers.
 
 ## Git state labels
 - `synced`: clean local HEAD equals the current advertised remote commit; describes Git synchronization only. Report applied-revision equality and runtime verification separately, including unavailable evidence.

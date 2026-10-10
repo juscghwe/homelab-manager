@@ -6,8 +6,8 @@ Git-native, modular management of Linux hosts, Docker Compose deployments, and n
 
 ## Deployment profiles
 
-- **Agent-only:** a host-native CLI and optionally a systemd daemon. Local Git checkout, approved Compose deployments, status collection if enabled, and optionally nftables policy deployment.
-- **Headless:** agent(s) plus a controller API. Coordinates multiple hosts, Git revisions, maintenance windows, and policy previews. No graphical UI required.
+- **Standalone / Agent-only:** lightweight unprivileged Go worker using system Git, a CLI and small authenticated remote operation interface with versioned JSON. Optional systemd background operation, Docker status/deployment and firewall operations via narrow installed helpers. CI can trigger it directly without a controller.
+- **Headless:** adds the central backend and fleet CLI/API, coordinating agents, schedules, Git-provider integration and topology evaluation. Optional Renovate/equivalent image-update discovery is managed alongside the backend, never required by workers.
 - **Full:** headless deployment plus an optional graphical editor for configuration, network-access maps, and change previews.
 
 **Primary workflow:** remote Git repository (Gitea, GitHub, GitLab, or plain SSH). **Git itself is required; a Git hosting product and CI runner are not.** CI systems may call the same API/CLI as the UI. Existing services continue running when the controller or Git remote is unavailable.
@@ -31,9 +31,9 @@ Agent instructions live in [`AGENTS.md`](AGENTS.md) and module-level `AGENTS.md`
 - Do not provide a remotely exposed general Docker socket or arbitrary host shell.
 - Docker Compose deployment on a rootful daemon is effectively host-administrative; keep it explicitly authorized.
 - The topology graph represents **network access policy**, not inferred application dependencies.
-- Unmanaged device models are **persistent**. Preview mode applies only to proposed edits.
+- Manually maintained topology is **persistent in Git**, including unmanaged device policies. Preview mode applies only to proposed edits; runtime observations and caches remain separate.
 - No deployment or firewall mutation is allowed while drift/conflict is unresolved, without an explicit conflict-resolution operation.
 
 ## First milestone
 
-Begin with the [Milestone 1 read-only Git status slice](docs/PLANS.md#1--agent-only-git-core), its implementation plan and language/output approval gate. Implement the host-local Git state model and CLI with fixtures and tests **before** writing privileged Docker and firewall executors. Examples are illustrative contracts, not runnable deployment configuration or finalized schemas.
+Begin with the [Milestone 1 read-only Git status slice](docs/PLANS.md#1--agent-only-git-core), the [implementation plan](docs/plans/0002-agent-git-core.md) and its proposed interfaces. Go, system Git, JSON and optional systemd are approved. Implement the host-local Git state model and CLI with fixtures and tests **before** writing privileged Docker and firewall executors. Examples are illustrative contracts, not runnable deployment configuration or finalized schemas.
