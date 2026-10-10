@@ -1,6 +1,21 @@
 # Example of permanent model entries; never interpreted as live facts without labels.
+# Illustrative schema only; see docs/plans/0001-architecture-readiness.md (D4).
+# Store authored baseline in the selected Git repository; never persist live
+# measurements here. Capability hints below grant no runtime permissions.
 schema_version: 1
+sources:
+  network-infrastructure:
+    url: git@example.invalid:network/infrastructure.git
+    branch: main
 devices:
+  - id: media01
+    kind: host
+    source: agent
+    can_apply_runtime: false
+  - id: admin01
+    kind: host
+    source: manual
+    can_apply_runtime: false
   - id: router01
     kind: router
     source: discovered_unmanaged
@@ -19,12 +34,15 @@ groups:
   - id: infrastructure
     members: [router01, independent-firewall]
 annotations:
-  - from: admin01
+  - id: admin-media-association
+    from: admin01
     to: media01
     label: manually-declared association
     # This is NOT a firewall rule or automatic service dependency.
 policies:
-  - owner: router01
+  - id: router-media-deny
+    owner: router01
+    # Rule provenance differs from the discovered device's provenance.
     source: manual
     permanent: true
     src: vlan:10

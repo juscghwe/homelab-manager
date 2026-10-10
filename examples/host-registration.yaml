@@ -1,11 +1,15 @@
 # Example only; no secrets or valid live host credentials.
-# Configuration schema must be finalized before implementation.
+# Readable YAML view of proposed host-local JSON registration (plan 0002).
+# Illustrative only; this is not a second runtime configuration source.
+schema_version: 1
 host: media01
 repositories:
   homelab:
+    root: /srv/homelab/config
     url: git@example.invalid:homelab/config.git
     branch: main
   jellyfin:
+    root: /srv/homelab/jellyfin
     url: git@example.invalid:apps/jellyfin.git
     branch: production
 stacks:
@@ -13,13 +17,19 @@ stacks:
     repository: homelab
     path: compose/caddy
     compose_project: caddy
+    tracked_inputs:
+      - compose/caddy
+      - shared/non-secret-defaults.yaml
   - id: jellyfin
     repository: jellyfin
     path: .
     compose_project: jellyfin
+    tracked_inputs:
+      - compose.yaml
+      - config/non-secret-settings.yaml
 capabilities:
   git_status: true
   docker_status: false
-  docker_deploy: true
+  docker_deploy: false
   docker_stop: false
   nftables_apply: false

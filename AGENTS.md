@@ -6,6 +6,7 @@ Build a modular Git-native Linux/Docker deployment and network-access manager. B
 ## Document authority
 - `docs/INTENT.md`: product scope and non-goals.
 - `docs/DESIGN.md`: architecture and allowed responsibilities.
+- `docs/SECURITY.md`: authorization, privilege boundaries and recovery requirements.
 - `docs/DATA_MODEL.md`: terminology, states and source/authority distinctions.
 - `docs/PROTOCOL.md`: agent-controller and deployment semantics.
 - `docs/ACCEPTANCE.md`: observable V1 completion criteria.
@@ -15,15 +16,15 @@ Build a modular Git-native Linux/Docker deployment and network-access manager. B
 Do not silently change an architectural invariant. When a requirement is ambiguous, preserve the stricter security boundary and document the decision/assumption for review. Update impacted documentation and tests in the same change as code.
 
 ## Global invariants
-1. Remote Git is the default configuration delivery method. Git hosting brands and CI/CD platforms are adapters, never hard dependencies. No parallel authoritative configuration store in the controller.
+1. Remote Git is the default configuration delivery method. Git hosting brands and CI/CD platforms are adapters, never hard dependencies. No parallel authoritative configuration store in the controller, including manually maintained topology: its baseline lives in a user-selected Git repository.
 2. Agent-only, headless, and full GUI profiles share the same deployment engine and revision semantics. UI must never be required for a CLI or CI workflow.
 3. Credentials, `.env` files, secrets, persistent volume data, and private host keys stay host-local; do not ingest or expose their contents via the UI/API/logs.
-4. Git read/diff operations run unprivileged. Docker administration and firewall application need explicit, separated privileged capabilities. No unrestricted root shell, remote Docker socket, or arbitrary `sudo` argument passthrough.
+4. Git read/diff operations run unprivileged. Docker administration and firewall application need explicit, separated privileged capabilities through installer-provisioned, root-owned helpers that the agent cannot modify. The agent has no Docker socket access or general sudo permission. No unrestricted root shell, remote Docker socket, or arbitrary `sudo` argument passthrough.
 5. A user-approved Compose file may itself grant effective root-equivalent host privileges via rootful Docker. Do not describe wrappers as eliminating that risk.
 6. Topology access evaluation defaults to **assumed allowed** in the absence of known restrictions, but must label assumptions and must not claim tested reachability. Do not infer application dependencies by inspecting Caddy or other app configs.
 7. Four source categories are first-class: managed agent; independent Git source (without agent); discovered unmanaged device; manually modeled device. Source, edit permission and apply authority are separate fields.
 8. Unmanaged simulated/modelled devices and their declared policies are persistent baseline state. Preview mode is ONLY for proposed changes. No mutation happens from running a preview.
-9. Firewall modifications never flush unrelated/Docker-owned rules. Remote firewall changes must have a host-local timed rollback and re-establishment test.
+9. Firewall modifications never flush unrelated/Docker-owned rules. Remote firewall changes must have durable timed rollback independent of agent/controller processes and a fresh authenticated connection plus transaction-bound confirmation.
 10. Treat dirty local Git trees and divergence as conflicts; never silently reset or overwrite them. Docker deployments are non-transactional with respect to application data and migrations.
 
 ## Working rules
@@ -33,3 +34,31 @@ Do not silently change an architectural invariant. When a requirement is ambiguo
 - For every PR: state the change, threat-model impact, changed public interfaces, tests run, and known limitations.
 - Privileged integration tests must run only in disposable test environments; never point tests at real homelab infrastructure.
 - Never claim a feature, rollback, reachability result, or end-to-end test is working without verifying it.
+
+## Git contribution rules
+
+### Branches
+- Never implement changes directly on `main`, `master`, or a milestone integration branch. Create topic branches from the applicable `milestone/<number>-<kebab-case-goal>` branch; reuse an existing branch for the same concern rather than creating parallel replacements. An environment-supplied generic branch must be renamed before publishing.
+- Use the existing isolated cloud checkout; do not create an additional Git worktree unless the user explicitly requests it. This contribution rule does not select the application's future candidate-staging implementation.
+- Topic branch types are `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style`, and `chore`. Use `<type>/<kebab-case-subject>` for topic branches and `<type>: <subject>` for commit subjects and PR titles. Reserve `milestone/<number>-<kebab-case-goal>` for integration branches and `milestone: <subject>` for milestone integration PRs and their merge commits. `main` is the stable integration destination, not a topic branch.
+- Keep one integration branch per active milestone, created from `main`; do not create speculative branches for future milestones. The current integration branch is `milestone/1-agent-git-core`. For example, create `feat/agent-git-status` from it and target it with the feature PR. See [milestone integration](docs/PLANS.md#branch-and-pr-integration).
+- The branch and PR type describe the overall concern; each commit's type describes its own change. A `feat/...` branch may contain related `fix:`, `test:`, and `docs:` commits. Do not create a new branch for every supporting fix. Avoid generic names such as `work`, `temp`, or `patch`, and replacement suffixes such as `-recreated`.
+- Keep one coherent concern per branch and PR. Do not combine unrelated modules or unrelated formatting/refactoring.
+- Inspect status before editing; preserve pre-existing changes and unpublished commits. Never reset or overwrite them to obtain a clean tree.
+
+### Commits
+- Use the shared typed subject convention above (including `milestone` for milestone completion), for example `docs: clarify deployment state ownership`. Keep commits atomic and understandable.
+- Review the diff and stage only relevant, explicit paths; avoid indiscriminate staging.
+- Do not amend or rewrite existing shared history. Never force-push to protected branches.
+- Do not commit credentials, secrets, generated temporary data or local environment settings.
+
+### Pull requests and integration
+- Topic PRs target their documented milestone branch, not `main` or another topic branch. Use `<type>: <subject>` for the PR title, matching the branch's overall type and purpose. Only a reviewed milestone integration PR targets `main`, with a `milestone: <subject>` title.
+- Reuse the existing PR for the concern. After integration, delete its merged topic branch; after milestone completion, delete the merged milestone branch once no open PR depends on it. Do not delete unmerged work or create duplicate replacement branches/PRs.
+- Explain what changed and why, affected architectural contracts/public interfaces, security implications, known limitations and the relevant plan document.
+- State which checks actually ran and their outcomes; distinguish failed, skipped and unrun checks. A successful build does not establish architectural correctness.
+- Respect every affected module's `AGENTS.md`. Do not invent results or claim unverified functionality.
+- Require explicit human review before merging changes to authorization, privilege boundaries, deployment semantics or firewall execution. Do not automatically merge any PR.
+- For documentation work, validate relative references, run `git diff --check`, inspect the changed-file list, and confirm the working tree after committing. If unrelated user changes exist, report them rather than deleting them.
+
+The current architecture audit and approval gates are in [0001-architecture-readiness](docs/plans/0001-architecture-readiness.md). Open decisions are not implementation authorization.
