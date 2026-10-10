@@ -1,5 +1,6 @@
 # Example only; no secrets or valid live host credentials.
 # Configuration schema must be finalized before implementation.
+schema_version: 1
 host: media01
 repositories:
   homelab:
@@ -20,6 +21,6 @@ stacks:
 capabilities:
   git_status: true
   docker_status: false
-  docker_deploy: true
+  docker_deploy: false
   docker_stop: false
   nftables_apply: false

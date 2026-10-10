@@ -14,6 +14,14 @@
 - CI may use scoped short-lived credentials where available. Prevent replay, enforce authorized host/stack/revision and transaction IDs.
 - Do not transmit/collect raw `.env`, secrets, keys, resolved secret config, `docker inspect` environment fields, or persistent volumes.
 
+## Unprivileged Git inspection
+
+- Treat repository content, paths and Git configuration as untrusted inputs. Execute fixed Git argument vectors without shell interpolation; validate registered roots and reject paths escaping them (including symlinks).
+- Status reports categories and safe metadata. Diffs are limited to approved tracked configuration paths; never read ignored/untracked file contents, host-local secret files or volume data for display. A tracked file may still contain a secret: unrestricted diff output is not automatically safe. Approve content-output rules before exposing diffs through CLI/API/UI.
+- Inspection must not execute repository-selected hooks, external diff/textconv helpers, filters or arbitrary credential helpers. Explicit fetch/staging must document trusted transport/helper configuration, avoid untrusted checkout hooks/filters, and preserve TLS/SSH host verification. Do not disable legitimate platform authentication blindly.
+- Unknown ancestry, missing objects and unavailable remote observations are explicit states, not evidence that applying is safe. Dirty/ahead/diverged trees require a separate explicit resolution that preserves local work.
+- Do not compute or expose hashes over resolved secret-bearing configuration as a substitute for sanitization; hashes can reveal low-entropy secret values. Safe fingerprint inputs require the decision in [D6](plans/0001-architecture-readiness.md#open-decisions-ranked-by-impact).
+
 ## Privileged execution
 - Never expose a Docker TCP API or mount unrestricted `docker.sock` into the management UI/controller.
 - A locally privileged executor may accept only explicit operations and configured stack IDs; never arbitrary shell fragments, file paths or Docker flags from remote callers.

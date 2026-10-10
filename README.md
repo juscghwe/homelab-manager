@@ -21,6 +21,7 @@ Git-native, modular management of Linux hosts, Docker Compose deployments, and n
 5. [`docs/PROTOCOL.md`](docs/PROTOCOL.md) — communication contracts and rollout transaction.
 6. [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) — required tests for V1.
 7. [`docs/PLANS.md`](docs/PLANS.md) — implementation sequencing for Codex.
+8. [`docs/plans/0001-architecture-readiness.md`](docs/plans/0001-architecture-readiness.md) — audit findings, invariant coverage and decisions requiring approval.
 
 Agent instructions live in [`AGENTS.md`](AGENTS.md) and module-level `AGENTS.md` files.
 
@@ -35,4 +36,4 @@ Agent instructions live in [`AGENTS.md`](AGENTS.md) and module-level `AGENTS.md`
 
 ## First milestone
 
-Implement the host-local Git state model and CLI with fixtures and tests **before** writing privileged Docker and firewall executors. See `docs/PLANS.md`.
+Begin with the [Milestone 1 read-only Git status slice](docs/PLANS.md#1--agent-only-git-core), its implementation plan and language/output approval gate. Implement the host-local Git state model and CLI with fixtures and tests **before** writing privileged Docker and firewall executors. Examples are illustrative contracts, not runnable deployment configuration or finalized schemas.

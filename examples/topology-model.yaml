@@ -1,6 +1,15 @@
 # Example of permanent model entries; never interpreted as live facts without labels.
+# Illustrative schema only; see docs/plans/0001-architecture-readiness.md (D4).
 schema_version: 1
 devices:
+  - id: media01
+    kind: host
+    source: agent
+    can_apply_runtime: false
+  - id: admin01
+    kind: host
+    source: manual
+    can_apply_runtime: false
   - id: router01
     kind: router
     source: discovered_unmanaged
@@ -25,6 +34,7 @@ annotations:
     # This is NOT a firewall rule or automatic service dependency.
 policies:
   - owner: router01
+    # Rule provenance differs from the discovered device's provenance.
     source: manual
     permanent: true
     src: vlan:10
