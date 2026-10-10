@@ -39,3 +39,16 @@ Publication confirmed: recovery commit `dbcc184eee64df55efd495d70966212acbe0be59
 Acceptance review confirmed the M1-A boundary, test coverage and documented restrictions; no additional executable functionality was needed during recovery. Unit tests, vet and whitespace checks pass. Race validation remains unrun because the required C compiler is absent; this is a review limitation, not a passing result. The PR is ready for maintainer review after this checkpoint is pushed. No automatic merge or M1-B implementation is authorized by this completion.
 
 Next outstanding project step: maintainer review of #8 (including schema/path restrictions and the unavailable race check). Independent housekeeping proceeds on `chore/agent-housekeeping` from `main`; its instructions reach the milestone only through a later reviewed integration after the housekeeping PR merges.
+
+
+## Review revisions — PR #8
+
+Maintainer review requested development tooling/CI, empty host registration and structured suspicious-path warnings. Approved housekeeping PR #9 is now integrated into the milestone and this feature branch, preserving milestone-specific instructions. The earlier assignee edit is retained by the same rule in the approved policy.
+
+| Chunk | Purpose / affected files | Dependencies and checkpoint | Tests / completion |
+| --- | --- | --- | --- |
+| 1 — Development checks | `agent/` check entry point, GitHub Actions and agent guide | Existing registration tests; install GCC/build tools in the development environment, then commit and push reproducible formatting, vet, unit and race checks. | Local checks pass with CGO enabled; CI uses the same commands. GCC is a development dependency only. |
+| 2 — Empty host scopes | Registration schema/validation, fixtures and agent guide | Chunk 1; explicitly allow empty repositories and stacks without dummy Compose/Git declarations, then commit and push. | Firewall-only and repository-only hosts validate; missing/malformed collections and unknown stack references still fail; capability defaults remain safe. |
+| 3 — Suspicious path warnings | Registration warning model, validation/loader, fixtures and affected contracts | Chunk 2; return deterministic sanitized warnings for suspicious directory names without weakening hard path/secret-content exclusions, then commit and push. | Structured warnings, metadata-only checks, path-boundary failures and secret-content protections tested. Document future interactive confirmation and narrowly scoped noninteractive override; no installer or CLI implemented. |
+
+Current checkpoint: housekeeping synchronized; review changes are not yet implemented. Next item: development checks. GCC installation needs environment administrator access (sudo requires a password); do not claim race validation until it runs successfully. PR #8 remains unmerged.
