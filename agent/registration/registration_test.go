@@ -188,8 +188,8 @@ func TestValidationFailures(t *testing.T) {
 		{"unsafe ID", func(c *Config) { c.Host = "x;echo CANARY" }, InvalidID, "host"},
 		{"uppercase ID", func(c *Config) { c.Host = "Host" }, InvalidID, "host"},
 		{"version", func(c *Config) { c.SchemaVersion = 0 }, UnsupportedSchema, "schema_version"},
-		{"no repos", func(c *Config) { c.Repositories = nil }, InvalidID, "repositories"},
-		{"no stacks", func(c *Config) { c.Stacks = nil }, InvalidID, "stacks"},
+		{"no repos", func(c *Config) { c.Repositories = nil }, InvalidSchema, "repositories"},
+		{"no stacks", func(c *Config) { c.Stacks = nil }, InvalidSchema, "stacks"},
 		{"empty repo ID", func(c *Config) { c.Repositories[""] = c.Repositories["repo-1"] }, InvalidID, "repositories[0]"},
 		{"duplicate stack", func(c *Config) { c.Stacks = append(c.Stacks, c.Stacks[0]) }, DuplicateID, "stacks[1].id"},
 		{"duplicate project", func(c *Config) { s := c.Stacks[0]; s.ID = "other"; c.Stacks = append(c.Stacks, s) }, DuplicateID, "stacks[1].compose_project"},
@@ -456,5 +456,56 @@ func TestDocumentedRuntimeExample(t *testing.T) {
 	c.Repositories["homelab"] = repo
 	if _, err := Validate(c); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Empty collections are deliberate host scopes, not implicit Docker/Git needs.
+func TestHostsWithoutStacks(t *testing.T) {
+	for _, caps := range []string{``, `,"capabilities":{"git_status":false,"nftables_apply":true}`} {
+		cfg, err := Decode(strings.NewReader(`{"schema_version":1,"host":"firewall","repositories":{},"stacks":[]` + caps + `}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := Validate(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(r.RepositoryIDs()) != 0 || len(r.StackIDs()) != 0 {
+			t.Fatal("dummy scope created")
+		}
+		if r.Capabilities().DockerDeploy || r.Capabilities().DockerStatus {
+			t.Fatal("implicit Docker capability")
+		}
+		if caps == "" && (!r.Capabilities().GitStatus || r.Capabilities().NFTablesApply) {
+			t.Fatal("unsafe defaults")
+		}
+		if caps != "" && (!r.Capabilities().NFTablesApply || r.Capabilities().GitStatus) {
+			t.Fatal("explicit capability declaration changed")
+		}
+	}
+	cfg := fixture(t)
+	cfg.Stacks = []Stack{}
+	r, err := Validate(cfg)
+	if err != nil || len(r.RepositoryIDs()) != 1 || len(r.StackIDs()) != 0 {
+		t.Fatalf("repository-only host: %v", err)
+	}
+	cfg = fixture(t)
+	cfg.Repositories = map[string]Repository{}
+	_, err = Validate(cfg)
+	wantError(t, err, UnknownRepository, "stacks[0].repository")
+}
+
+func TestEmptyCollectionsMustBeExplicit(t *testing.T) {
+	for _, input := range []string{
+		`{"schema_version":1,"host":"host","stacks":[]}`,
+		`{"schema_version":1,"host":"host","repositories":{}}`,
+		`{"schema_version":1,"host":"host","repositories":null,"stacks":[]}`,
+		`{"schema_version":1,"host":"host","repositories":{},"stacks":null}`,
+		`{"schema_version":1,"host":"host","repositories":[],"stacks":[]}`,
+		`{"schema_version":1,"host":"host","repositories":{},"stacks":{}}`,
+	} {
+		if _, err := Decode(strings.NewReader(input)); err == nil {
+			t.Fatal("absent or malformed collection accepted")
+		}
 	}
 }

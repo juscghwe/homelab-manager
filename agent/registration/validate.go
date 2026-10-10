@@ -27,15 +27,15 @@ func Validate(cfg Config) (*Registration, error) {
 	if !idPattern.MatchString(cfg.Host) {
 		return nil, fail(InvalidID, "host")
 	}
-	if len(cfg.Repositories) == 0 {
-		return nil, fail(InvalidID, "repositories")
+	if cfg.Repositories == nil {
+		return nil, fail(InvalidSchema, "repositories")
 	}
-	if len(cfg.Stacks) == 0 {
-		return nil, fail(InvalidID, "stacks")
+	if cfg.Stacks == nil {
+		return nil, fail(InvalidSchema, "stacks")
 	}
 	out := cfg
 	out.Repositories = make(map[string]Repository, len(cfg.Repositories))
-	out.Stacks = nil
+	out.Stacks = make([]Stack, 0, len(cfg.Stacks))
 	roots := map[string]*os.Root{}
 	defer func() {
 		for _, root := range roots {

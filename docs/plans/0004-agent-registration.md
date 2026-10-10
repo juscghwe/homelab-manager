@@ -8,7 +8,7 @@ Use the standard-library-only Go module `github.com/juscghwe/homelab-manager/age
 
 ## Concrete schema decisions
 
-Keep the proposed repository map and stack list. IDs and Compose projects are bounded lowercase ASCII tokens. Optional remote URL/branch declarations are validated syntactically; only HTTPS, SSH URLs and SSH scp-style remotes are admitted. No password, HTTPS userinfo, URL query/fragment or external Git helper syntax. Remote contact and actual Git-repository checks belong to M1-B.
+Keep the proposed repository map and stack list, allowing explicitly empty collections for hosts without Git repositories or Compose stacks. IDs and Compose projects are bounded lowercase ASCII tokens. Optional remote URL/branch declarations are validated syntactically; only HTTPS, SSH URLs and SSH scp-style remotes are admitted. No password, HTTPS userinfo, URL query/fragment or external Git helper syntax. Remote contact and actual Git-repository checks belong to M1-B.
 
 JSON fields are case-sensitive; reject duplicates, unknown fields, nulls, trailing documents and excessive size/nesting. An omitted capabilities object or field defaults to Git status enabled and other known capabilities disabled. Explicit booleans are retained as declarations, never grants of privilege; unknown capability names/types are rejected. None of the declared runtime operations is implemented here.
 
@@ -52,3 +52,5 @@ Maintainer review requested development tooling/CI, empty host registration and 
 | 3 — Suspicious path warnings | Registration warning model, validation/loader, fixtures and affected contracts | Chunk 2; return deterministic sanitized warnings for suspicious directory names without weakening hard path/secret-content exclusions, then commit and push. | Structured warnings, metadata-only checks, path-boundary failures and secret-content protections tested. Document future interactive confirmation and narrowly scoped noninteractive override; no installer or CLI implemented. |
 
 Chunk 1 checkpoint: shared formatting/vet/unit/race/CGO-disabled-build script and pinned GitHub Actions workflow implemented. Formatting, vet and unit checks pass locally; local race validation is pending GCC installation (sudo requires an administrator password). CI explicitly installs build-essential. The PR stays draft until all review changes and validation complete. Next item: explicit empty host registration; resolve local compiler installation and verify hosted CI before final handoff.
+
+Chunk 2 checkpoint: explicit empty repository/stack collections and independent capability declarations are supported; omitted/null/malformed collections and unknown stack references remain errors. Unit tests and vet pass. Next item: structured suspicious-path warnings; local race testing and hosted CI outcomes still need confirmation.

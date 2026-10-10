@@ -32,15 +32,23 @@ See the complete [runtime JSON example](../examples/host-registration.json). Its
 | --- | --- |
 | `schema_version` | Required integer `1`; no implicit version migration. |
 | `host` | Required stable host ID. |
-| `repositories` | Nonempty object keyed by unique repository ID. Each entry requires `root`, an existing absolute checkout directory. |
+| `repositories` | Required object keyed by unique repository ID; `{}` is valid. Each entry requires `root`, an existing absolute checkout directory. |
 | `repositories.*.url` | Optional remote declaration. Omit for local-only registration; an explicitly empty string is rejected. HTTPS, SSH URLs and SSH scp-style syntax only; no password, HTTPS userinfo, query, fragment, external helper, `file:` URL or arbitrary local remote path. Conservative ASCII remote path characters: letters/digits and `_./~+-`. SSH usernames are supported; credentials belong in separately trusted transport configuration. No remote contact is performed. |
 | `repositories.*.branch` | Optional short branch name (e.g. `main` or `feature/status`). Omit when not selected; explicitly empty, `HEAD`, full `refs/...`, option-like and invalid ref spellings are rejected. No branch existence or Git check occurs. |
-| `stacks` | Nonempty array. Each entry requires unique `id`, known `repository`, directory `path`, host-wide unique `compose_project`, and nonempty `tracked_inputs`. |
+| `stacks` | Required array; `[]` is valid. Each entry requires unique `id`, known `repository`, directory `path`, host-wide unique `compose_project`, and nonempty `tracked_inputs`. |
 | `stacks[].path` | Repository-relative stack directory; `.` is allowed. Stack locations in the same repository cannot be equal or nested. |
 | `stacks[].tracked_inputs` | Repository-relative exact regular files or directories, including shared paths outside the stack directory but inside the same repository. No glob expansion. Inputs may be shared across stacks; duplicate/equal/nested inputs within a stack are rejected. Directory descendants are not scanned here. |
 | `capabilities` | Optional object of known boolean declarations. Omission or `{}` defaults only `git_status` to true. Other flags default false; explicit false disables Git status. Unknown names, non-booleans and nulls are errors. |
 
 Host/repository/stack IDs and Compose projects use `[a-z0-9][a-z0-9_-]{0,62}`. Accepted capability names are `git_status`, `docker_status`, `docker_deploy`, `docker_stop`, `nftables_apply`. Explicit true for a future capability is stored as a request, not implemented behavior or authorization. A registration cannot grant the future helpers privileges; independently protected policy remains mandatory.
+
+A host need not register any Compose stacks or Git repositories. For example, a host declaring a future firewall capability can use:
+
+```json
+{"schema_version":1,"host":"firewall01","repositories":{},"stacks":[],"capabilities":{"git_status":false,"nftables_apply":true}}
+```
+
+Both collections must be explicit (not omitted or null). The programmatic `Config` API likewise requires non-nil map/slice values. Repositories without stacks are also valid; a declared stack still requires an existing repository reference. Empty scopes do not authorize any operation, and the example does not implement firewall management.
 
 JSON keys are case-sensitive. Reject duplicate keys anywhere (including escaped equivalents), unknown fields, null anywhere, malformed types, trailing JSON and invalid UTF-8. Input is limited to 1 MiB and 32 nested containers. This strictness prevents silently accepted misspellings or ambiguous duplicate declarations.
 
