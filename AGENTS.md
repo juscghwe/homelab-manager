@@ -66,3 +66,65 @@ Do not silently change an architectural invariant. When a requirement is ambiguo
 - For documentation work, validate relative references, run `git diff --check`, inspect the changed-file list, and confirm the working tree after committing. If unrelated user changes exist, report them rather than deleting them.
 
 The current architecture audit and approval gates are in [0001-architecture-readiness](docs/plans/0001-architecture-readiness.md). Open decisions are not implementation authorization.
+
+## Durable development workflow
+
+### Recovery-first startup
+
+At the beginning of a task, including after an interruption:
+
+1. Identify the canonical repository (`juscghwe/homelab-manager`) and the correct base branch from actual refs, PR metadata and the task. A fork is not authoritative. Keep `origin` pointed at `https://github.com/juscghwe/homelab-manager.git` in active checkouts; inspect and preserve historical remote-tracking refs before pruning anything.
+2. Inspect the working tree, staging area, local and remote branches, recent commits/reflogs, remotes and existing worktrees. Preserve unrelated edits and unpublished work.
+3. Check for an existing feature branch and PR before creating either. Reuse completed work and avoid duplicate replacement branches or PRs.
+4. Review the latest durable Git checkpoint and the repository-local plan or PR progress record. Continue from the next incomplete development chunk.
+
+Never restart implementation merely because a conversation was interrupted. Git and the actual filesystem are authoritative evidence of work; assistant conversation state is not a substitute. Do not reset, clean, overwrite or discard work to obtain a convenient starting point.
+
+### Plan coherent development chunks
+
+For substantial implementation, establish a short roadmap before coding. Reuse the relevant milestone plan and add execution progress there or in a focused plan under `docs/plans/`, rather than duplicating architectural contracts. Prefer 3–6 logical chunks, each recording:
+
+- Purpose and affected files/modules.
+- Dependencies and expected Git checkpoint.
+- Relevant tests and a concrete completion condition.
+
+Keep completed checkpoints, actual verification results and the next outstanding item discoverable without reconstructing a conversation. A feature PR may contain several meaningful commits; each chunk need not become its own PR.
+
+### Save, validate, commit and publish
+
+Prefer small, independently understandable functional changes. Commit each coherent stage once it reaches a safe checkpoint. A commit may include several related files; do not create one commit per file merely to increase frequency. Avoid spending an entire large implementation task with extensive uncommitted changes or mixing unrelated modifications that cannot be committed independently.
+
+Use this persistence order:
+
+1. Save project files in an identifiable persistent checkout.
+2. Preserve coherent changes in local Git commits on a named topic branch.
+3. Push safe checkpoints to the canonical GitHub repository.
+4. Maintain a draft PR as the remote review and recovery point.
+
+Temporary execution directories, conversation history and local-only uncommitted files are insufficient long-term recovery mechanisms. Never keep substantial implementation solely in a disposable directory. When using an isolated Codex worktree, identify its branch and push meaningful checkpoints to GitHub.
+
+Before starting the next implementation stage, save and validate the previous coherent stage, review its diff, stage only relevant paths, commit it, push when safe, and record the next outstanding item. Never push secrets, credentials, unrelated changes, generated temporary artifacts or known unsafe content merely to create a checkpoint. If publication is blocked, preserve a local commit and record the exact blocker; do not claim remote durability.
+
+A valid intermediate commit may implement only part of a feature if its incomplete state is explicit. Record which tests passed, failed or were not run; never claim unperformed validation. Unfinished work stays on a topic branch and, when published, in a draft PR. Mark it ready only when its acceptance criteria are met and any remaining validation limitations are explicit.
+
+There is no requirement to squash development commits manually before review. The maintainer may choose squash merging to consolidate approved work; agents must not rewrite published history or automatically squash, merge or discard it.
+
+### Authentication, naming and PR boundaries
+
+- Before remote mutations, verify `gh api /user --jq .login` returns `juscghwe-codex`. Never fall back to personal-account credentials. New Git author and committer identities must both be `juscghwe-codex <340593538+juscghwe-codex@users.noreply.github.com>`; verify commit metadata before pushing.
+- Assign new PRs and issues to the maintainer `juscghwe`; authentication and new commit identities remain `juscghwe-codex`.
+- Use `<type>/<kebab-case-subject>` topic branches and Conventional Commit/PR subjects `<type>(<optional-scope>): <subject>` (omit the parentheses when there is no scope). Types include `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `style` and `chore`. Supporting fixes and documentation belong on the same feature branch when related. Avoid generic `work`, `temp` or `patch` branches and unnecessary replacement branches.
+- Reserve `milestone/<number>-<kebab-case-goal>` for milestone integration branches and `milestone: <subject>` for final milestone PRs. Discover and preserve the existing integration branch. Feature work targets its documented milestone branch; a genuine unmerged prerequisite may use a documented temporary stacked PR base. Explicitly authorized repository-wide housekeeping can branch from and target `main` independently. Never implement directly on `main` or a milestone integration branch.
+- Keep one cohesive feature or interface per PR. Prefer separate engine, CLI, privilege-boundary and integration review units when their responsibilities differ. Avoid giant mixed-feature PRs and individual-helper/file micro-PRs.
+- Each implementation PR includes relevant tests and affected documentation. Explain scope, dependencies/base, security impact, public interface changes, actual validation results and limitations. Keep dependency references and milestone tracking current; after prerequisite integration, verify the dependent PR contains only its intended feature diff.
+- Never force-push shared branches or auto-merge PRs. The maintainer remains responsible for review, approval and merge.
+
+### Interruption and limited execution budgets
+
+Context limits, usage exhaustion, connection loss and hard interruptions are normal operational conditions. Checkpoint incrementally throughout execution; do not rely on a final cleanup step. Frequent normal checkpoints are mandatory because an interruption may occur without warning.
+
+If the remaining execution budget is insufficient for another complete chunk, do not begin an unrelated or high-risk change. Preserve the current safe implementation, commit and push coherent work where possible, and record unresolved work and actual verification results. Leave incomplete PRs in draft. Do not promise automatic resumption when resource limits reset or claim an interrupted task is complete.
+
+### Propagating repository-wide instructions
+
+A housekeeping PR against `main` remains independent of ongoing milestone implementation. After the maintainer approves and merges it, bring its instruction changes into the active milestone through a reviewable, non-destructive integration. Preserve the milestone's newer architecture and scoped instructions: never replace its `AGENTS.md` wholesale with an older copy from `main`, rewrite milestone history or merge automatically. Until that reviewed integration is available, apply these checkpoint principles to ongoing work and explicitly record that policy synchronization is still pending.
