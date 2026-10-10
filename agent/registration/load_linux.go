@@ -44,5 +44,11 @@ func Load(path string) (*Registration, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Validate(cfg)
+	registration, err := Validate(cfg)
+	if err != nil {
+		return nil, err
+	}
+	// Config-file warnings precede declaration warnings deterministically.
+	registration.warnings = append(pathWarnings(clean, "config"), registration.warnings...)
+	return registration, nil
 }

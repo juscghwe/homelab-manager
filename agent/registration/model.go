@@ -45,7 +45,14 @@ type Capabilities struct {
 
 // Registration is a validated snapshot. Accessors return values or copies.
 // Later operations must revalidate filesystem state at the time of use.
-type Registration struct{ config Config }
+type Registration struct {
+	config   Config
+	warnings []Warning
+}
+
+// Warnings reports metadata-only security concerns, not permission to read
+// contents or execute capabilities. The returned slice is an independent copy.
+func (r *Registration) Warnings() []Warning { return slices.Clone(r.warnings) }
 
 func (r *Registration) Host() string               { return r.config.Host }
 func (r *Registration) Capabilities() Capabilities { return r.config.Capabilities }

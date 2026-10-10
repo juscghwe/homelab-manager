@@ -23,7 +23,7 @@ func TestLoad(t *testing.T) {
 	}
 }
 func TestLoadRejectsUnsafeFiles(t *testing.T) {
-	for _, kind := range []string{"relative", "missing", "directory", "symlink", "ancestor symlink", "fifo", "secret name", "secret directory", "oversize", "malformed"} {
+	for _, kind := range []string{"relative", "missing", "directory", "symlink", "ancestor symlink", "fifo", "secret name", "oversize", "malformed"} {
 		t.Run(kind, func(t *testing.T) {
 			base := t.TempDir()
 			p := filepath.Join(base, "agent.json")
@@ -55,10 +55,6 @@ func TestLoadRejectsUnsafeFiles(t *testing.T) {
 				}
 			case "secret name":
 				p = filepath.Join(base, ".env.json")
-				write(t, p, "SECRET")
-			case "secret directory":
-				mkdir(t, filepath.Join(base, "secrets"))
-				p = filepath.Join(base, "secrets", "agent.json")
 				write(t, p, "SECRET")
 			case "oversize":
 				write(t, p, strings.Repeat(" ", MaxBytes+1))
@@ -94,5 +90,20 @@ func TestInputsNeverRead(t *testing.T) {
 	c.Stacks[0].TrackedInputs = []string{"opaque.json"}
 	if _, err := Validate(c); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLoadSuspiciousLocation(t *testing.T) {
+	cfg := fixture(t)
+	p := filepath.Join(t.TempDir(), "secrets", "agent.json")
+	mkdir(t, filepath.Dir(p))
+	write(t, p, string(encode(t, cfg)))
+	r, err := Load(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	warnings := r.Warnings()
+	if len(warnings) != 1 || warnings[0] != (Warning{Code: SuspiciousPath, Field: "config"}) {
+		t.Fatalf("warnings: %+v", warnings)
 	}
 }

@@ -238,7 +238,7 @@ func TestValidationFailures(t *testing.T) {
 }
 
 func TestUnsafePaths(t *testing.T) {
-	for _, path := range []string{"", "../outside", "compose/../web", "/tmp/injected", `C:\injected`, `compose\web`, "--help", ".git/config", ".env", ".env.production", "secrets/token", "data/db", "volumes/db", "key.pem", "shared/*.json", "bad\x00path"} {
+	for _, path := range []string{"", "../outside", "compose/../web", "/tmp/injected", `C:\injected`, `compose\web`, "--help", ".git/config", ".env", ".env.production", "key.pem", "shared/*.json", "bad\x00path"} {
 		t.Run(path, func(t *testing.T) {
 			c := fixture(t)
 			c.Stacks[0].Path = path

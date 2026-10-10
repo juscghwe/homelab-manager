@@ -42,6 +42,7 @@ func Validate(cfg Config) (*Registration, error) {
 			root.Close()
 		}
 	}()
+	var warnings []Warning
 	var infos []os.FileInfo
 	var paths []string
 	for i, id := range sortedKeys(cfg.Repositories) {
@@ -79,6 +80,7 @@ func Validate(cfg Config) (*Registration, error) {
 		}
 		paths = append(paths, path)
 		infos = append(infos, info)
+		warnings = append(warnings, pathWarnings(path, field+".root")...)
 		repo.Root = path
 		out.Repositories[id] = repo
 	}
@@ -115,6 +117,7 @@ func Validate(cfg Config) (*Registration, error) {
 		if !info.IsDir() {
 			return nil, fail(InvalidPath, field+".path")
 		}
+		warnings = append(warnings, pathWarnings(path, field+".path")...)
 		s.Path = path
 		for _, prior := range out.Stacks {
 			if prior.Repository == s.Repository && overlaps(prior.Path, s.Path) {
@@ -139,12 +142,13 @@ func Validate(cfg Config) (*Registration, error) {
 					return nil, fail(OverlappingPath, location)
 				}
 			}
+			warnings = append(warnings, pathWarnings(path, location)...)
 			s.TrackedInputs = append(s.TrackedInputs, path)
 		}
 		slices.Sort(s.TrackedInputs)
 		out.Stacks = append(out.Stacks, s)
 	}
-	return &Registration{config: out}, nil
+	return &Registration{config: out, warnings: warnings}, nil
 }
 
 func overlaps(a, b string) bool {

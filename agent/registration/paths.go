@@ -9,8 +9,9 @@ import (
 	"unicode/utf8"
 )
 
-// Filename exclusions are conservative, not a secret detector. Directory
-// descendants are not enumerated here; future Git operations must screen them.
+// Hard exclusions protect recognized secret/control-file names, not arbitrary
+// secrets. Ambiguous directory names yield separate metadata-only warnings.
+// Descendants are not enumerated here; future Git operations must screen them.
 func safePath(s string) bool {
 	if s == "" || len(s) > 4096 || !utf8.ValidString(s) || strings.ContainsAny(s, `\:*?[`) {
 		return false
@@ -25,7 +26,7 @@ func safePath(s string) bool {
 			return false
 		}
 		p := strings.ToLower(part)
-		if p == ".git" || p == ".ssh" || p == ".env" || strings.HasPrefix(p, ".env.") || p == "secret" || p == "secrets" || p == "data" || p == "volume" || p == "volumes" {
+		if p == ".git" || p == ".ssh" || p == ".env" || strings.HasPrefix(p, ".env.") {
 			return false
 		}
 		for _, ext := range []string{".key", ".pem", ".p12", ".pfx"} {
