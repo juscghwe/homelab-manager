@@ -24,6 +24,8 @@ const (
 	OutputLimit           Code = "OUTPUT_LIMIT"
 	MetadataLimit         Code = "METADATA_LIMIT"
 	RemoteFailure         Code = "REMOTE_FAILURE"
+	ShallowHistory        Code = "SHALLOW_HISTORY"
+	MissingObjects        Code = "MISSING_OBJECTS"
 )
 
 // Error contains only fixed reason/operation names, never Git stderr or values.
@@ -86,6 +88,11 @@ const (
 	NotApplicable Relation = "not_applicable"
 )
 
+type Comparison struct {
+	Relation Relation
+	Reason   Code
+}
+
 type Evidence struct {
 	Shallow, Partial bool
 	ObjectFormat     string
@@ -97,6 +104,7 @@ type Result struct {
 	DirtyAvailable bool
 	Remote         Remote
 	Relation       Relation
+	RelationReason Code
 	Evidence       Evidence
 	ObservedAt     time.Time
 }

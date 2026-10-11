@@ -35,7 +35,7 @@ func (e *Engine) Inspect(parent context.Context, reg *registration.Registration,
 		result.Remote.State = RemoteNotObserved
 		result.Relation = Unknown
 	}
-	if reg == nil {
+	if e == nil || e.runner == nil || reg == nil {
 		return result, failure(InvalidArgument, "registration")
 	}
 	if !reg.Capabilities().GitStatus {
@@ -103,7 +103,18 @@ func (e *Engine) Inspect(parent context.Context, reg *registration.Registration,
 	result.DirtyAvailable = true
 	result.ObservedAt = time.Now().UTC()
 	if request.Remote {
-		return result, failure(UnsupportedRepository, "remote_pending")
+		result.Remote = e.observeRemote(ctx, repo, v.format)
+		if result.Remote.State == RemoteNotConfigured {
+			result.Relation = NotApplicable
+		}
+		if result.Remote.State == RemoteAvailable && result.Head.State == HeadAvailable {
+			comparison, err := e.compare(ctx, v, result.Head.OID, result.Remote.OID)
+			if err != nil {
+				return result, err
+			}
+			result.Relation = comparison.Relation
+			result.RelationReason = comparison.Reason
+		}
 	}
 	return result, nil
 }
