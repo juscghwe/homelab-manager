@@ -75,7 +75,7 @@ func parsePaths(data []byte, tree bool, format string) ([]string, error) {
 	}
 	return names, nil
 }
-func parseStatus(data []byte) (Dirty, error) {
+func parseStatus(data []byte, format string) (Dirty, error) {
 	var d Dirty
 	if len(data) == 0 {
 		return d, nil
@@ -108,6 +108,37 @@ func parseStatus(data []byte) (Dirty, error) {
 		if len(fields) != expected || len(fields[1]) != 2 || !safeStatusName(string(fields[expected-1])) {
 			return Dirty{}, failure(UnexpectedOutput, "status")
 		}
+		if len(fields[2]) != 4 || string(fields[2]) != "N..." {
+			return Dirty{}, failure(UnexpectedOutput, "status")
+		}
+		modeEnd, oidEnd := 6, 8
+		if record[0] == 'u' {
+			modeEnd, oidEnd = 7, 10
+		}
+		for _, mode := range fields[3:modeEnd] {
+			if len(mode) != 6 {
+				return Dirty{}, failure(UnexpectedOutput, "status")
+			}
+			for _, c := range mode {
+				if c < '0' || c > '7' {
+					return Dirty{}, failure(UnexpectedOutput, "status")
+				}
+			}
+		}
+		for _, oid := range fields[modeEnd:oidEnd] {
+			n := 40
+			if format == "sha256" {
+				n = 64
+			}
+			if len(oid) != n {
+				return Dirty{}, failure(UnexpectedOutput, "status")
+			}
+			for _, c := range oid {
+				if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+					return Dirty{}, failure(UnexpectedOutput, "status")
+				}
+			}
+		}
 		xy := fields[1]
 		for _, c := range xy {
 			if !bytes.ContainsRune([]byte(".MADRCUT"), rune(c)) {
@@ -125,4 +156,25 @@ func parseStatus(data []byte) (Dirty, error) {
 }
 func safeStatusName(name string) bool {
 	return name != "" && !strings.ContainsRune(name, 0) && !strings.HasPrefix(name, "/") && path.Clean(name) == name && name != ".." && !strings.HasPrefix(name, "../")
+}
+
+func checkIndexFlags(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	if data[len(data)-1] != 0 {
+		return failure(UnexpectedOutput, "index_flags")
+	}
+	for _, record := range bytes.Split(data[:len(data)-1], []byte{0}) {
+		if len(record) < 3 || record[1] != ' ' || !safeTrackedName(string(record[2:])) {
+			return failure(UnexpectedOutput, "index_flags")
+		}
+		if record[0] == 'S' || record[0] >= 'a' && record[0] <= 'z' {
+			return failure(UnsupportedRepository, "index_flags")
+		}
+		if record[0] != 'H' && record[0] != 'M' {
+			return failure(UnexpectedOutput, "index_flags")
+		}
+	}
+	return nil
 }

@@ -96,7 +96,7 @@ func (e *Engine) Inspect(parent context.Context, reg *registration.Registration,
 	if status.exit != 0 {
 		return result, failure(IncompleteRepository, "status")
 	}
-	result.Dirty, err = parseStatus(status.data)
+	result.Dirty, err = parseStatus(status.data, v.format)
 	if err != nil {
 		return result, err
 	}
@@ -128,6 +128,18 @@ func (e *Engine) screenPaths(ctx context.Context, v *view, hasHead bool) error {
 	}
 	names, err := parsePaths(index.data, false, v.format)
 	if err != nil {
+		return err
+	}
+	// Assume-unchanged and skip-worktree entries can conceal dirty files. Refuse
+	// those layouts; never clear flags with update-index, even in scratch.
+	flags, err := e.runner.run(ctx, v.command("paths", "ls-files", "-v", "-z"))
+	if err != nil {
+		return err
+	}
+	if flags.exit != 0 {
+		return failure(IncompleteRepository, "index")
+	}
+	if err := checkIndexFlags(flags.data); err != nil {
 		return err
 	}
 	if hasHead {

@@ -103,7 +103,7 @@ func openView(ctx context.Context, r runner, repoRoot string, opts Options) (*vi
 	if os.WriteFile(filepath.Join(directory, "HEAD"), head, 0600) != nil {
 		return nil, failure(CommandFailed, "scratch")
 	}
-	for _, name := range []string{"index", "packed-refs", "shallow", "info/exclude"} {
+	for _, name := range []string{"index", "packed-refs", "shallow", "info/exclude", "info/attributes"} {
 		data, err := v.read(ctx, ".git/"+name, true)
 		if err != nil {
 			return nil, err
@@ -117,15 +117,9 @@ func openView(ctx context.Context, r runner, repoRoot string, opts Options) (*vi
 			}
 		}
 	}
-	if err := fs.WalkDir(root.FS(), ".git/refs", func(name string, entry fs.DirEntry, walkErr error) error {
+	if err := v.walk(ctx, ".git/refs", func(name string, entry fs.DirEntry) error {
 		if err := ctx.Err(); err != nil {
 			return contextFailure(err, "metadata")
-		}
-		if walkErr != nil {
-			return failure(InvalidRepository, "refs")
-		}
-		if err := v.countEntry(); err != nil {
-			return err
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
 			return failure(UnsafePath, "refs")
@@ -178,7 +172,7 @@ func (v *view) settings(data []byte) (string, error) {
 				return "", failure(UnsupportedRepository, "format")
 			}
 		case "core.bare":
-			if value != "false" {
+			if b, ok := gitBoolean(value); !ok || b != "false" {
 				return "", failure(UnsupportedRepository, "layout")
 			}
 		case "extensions.objectformat":
@@ -189,7 +183,7 @@ func (v *view) settings(data []byte) (string, error) {
 		case "extensions.partialclone":
 			v.partial = true
 		case "core.sparsecheckout", "core.sparsecheckoutcone", "core.splitindex":
-			if value != "false" {
+			if b, ok := gitBoolean(value); !ok || b != "false" {
 				return "", failure(UnsupportedRepository, "index_layout")
 			}
 		case "core.filemode", "core.ignorecase", "core.precomposeunicode":
@@ -240,15 +234,9 @@ func (v *view) countEntry() error {
 	return nil
 }
 func (v *view) scanObjects(ctx context.Context) error {
-	return fs.WalkDir(v.root.FS(), ".git/objects", func(name string, entry fs.DirEntry, err error) error {
+	return v.walk(ctx, ".git/objects", func(name string, entry fs.DirEntry) error {
 		if e := ctx.Err(); e != nil {
 			return contextFailure(e, "objects")
-		}
-		if err != nil {
-			return failure(InvalidRepository, "objects")
-		}
-		if err := v.countEntry(); err != nil {
-			return err
 		}
 		if entry.Type()&os.ModeSymlink != 0 || !entry.IsDir() && !entry.Type().IsRegular() {
 			return failure(UnsafePath, "objects")
@@ -341,4 +329,65 @@ func checkAbsoluteDirectory(path string) error {
 func (v *view) command(operation string, args ...string) command {
 	env := append(gitEnvironment(false, nil), "GIT_DIR="+v.directory, "GIT_WORK_TREE="+v.worktree, "GIT_OBJECT_DIRECTORY="+v.objects, "GIT_INDEX_FILE="+filepath.Join(v.directory, "index"))
 	return command{operation: operation, directory: v.worktree, args: args, environment: env}
+}
+
+// walk reads directory entries in fixed batches rather than allocating an entire
+// attacker-sized directory listing before enforcing MaxEntries.
+func (v *view) walk(ctx context.Context, start string, visit func(string, fs.DirEntry) error) error {
+	info, err := v.metadataInfo(start)
+	if err != nil {
+		return err
+	}
+	if err := v.countEntry(); err != nil {
+		return err
+	}
+	if err := visit(start, fs.FileInfoToDirEntry(info)); err != nil {
+		return err
+	}
+	queue := []string{start}
+	for len(queue) > 0 {
+		if err := ctx.Err(); err != nil {
+			return contextFailure(err, "metadata")
+		}
+		name := queue[0]
+		queue = queue[1:]
+		f, err := v.root.OpenFile(name, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+		if err != nil {
+			return failure(UnsafePath, "metadata")
+		}
+		for {
+			if err := ctx.Err(); err != nil {
+				f.Close()
+				return contextFailure(err, "metadata")
+			}
+			entries, err := f.ReadDir(128)
+			if err != nil && err != io.EOF {
+				f.Close()
+				return failure(InvalidRepository, "metadata")
+			}
+			for _, entry := range entries {
+				if err := v.countEntry(); err != nil {
+					f.Close()
+					return err
+				}
+				path := name + "/" + entry.Name()
+				if len(path) > 4096 || strings.Count(path, "/") > 64 {
+					f.Close()
+					return failure(MetadataLimit, "metadata")
+				}
+				if err := visit(path, entry); err != nil {
+					f.Close()
+					return err
+				}
+				if entry.IsDir() {
+					queue = append(queue, path)
+				}
+			}
+			if err == io.EOF {
+				break
+			}
+		}
+		f.Close()
+	}
+	return nil
 }

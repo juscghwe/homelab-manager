@@ -178,7 +178,7 @@ func TestInvalidRegistrationAndRepositories(t *testing.T) {
 }
 func TestStatusAndPathParserRejections(t *testing.T) {
 	for _, data := range [][]byte{[]byte("? name"), []byte("2 renamed\x00"), []byte("1 XY\x00"), []byte("? ../escape\x00"), []byte("# header\x00"), []byte("\x00")} {
-		_, err := parseStatus(data)
+		_, err := parseStatus(data, "sha1")
 		testError(t, err, UnexpectedOutput)
 	}
 	for _, data := range [][]byte{[]byte("bad"), []byte("100644 invalid 0\tname\x00"), []byte("100644 " + strings.Repeat("a", 40) + " 0\t.env\x00")} {
@@ -187,7 +187,7 @@ func TestStatusAndPathParserRejections(t *testing.T) {
 			t.Fatal("invalid path output accepted")
 		}
 	}
-	if _, err := parseStatus([]byte("? odd\nname\x00")); err != nil {
+	if _, err := parseStatus([]byte("? odd\nname\x00"), "sha1"); err != nil {
 		t.Fatal(err)
 	}
 }
