@@ -1,0 +1,23 @@
+# M1-B — read-only Git inspection
+
+Base: `milestone/1-agent-git-core` at `6088737a55b8ee893bebc4ec443faa9a620bac93`; prerequisite PR #8 is merged. Tracking: issue #6. Scope follows plans [0002](0002-agent-git-core.md), [0003](0003-milestone-1-delivery.md) and [registration](0004-agent-registration.md).
+
+## Design and review boundaries
+
+Use the existing Go module and system Git. A private temporary metadata view copies only bounded HEAD/ref/index/shallow/ignore metadata, selects a minimal configuration, and points Git at the existing object database and working tree. Never copy repository executable config into that view, and never fetch or write the source repository. Reject unsafe metadata paths, alternates and unsupported layouts. The view is ephemeral scratch, not agent state or candidate preparation.
+
+The public engine consumes validated registration and registered IDs. Its typed results distinguish HEAD/unborn/detached, dirty counts, requested remote observations and conservative ancestry. It has no CLI envelope, deployment/preparation fields or persistence. A controlled runner uses fixed argv, filtered environments, deadlines, process-group cancellation and bounded stdout/stderr; raw diagnostics never escape it.
+
+Remote queries use registered HTTPS/SSH and branch only. Authentication uses system TLS trust, strict SSH host verification and trusted administrator-selected authentication inputs; repository helpers/configuration are never authoritative. The exact supported policy and restrictions must be documented and tested before completion. Metadata checks are a snapshot: concurrent hostile filesystem replacement is a limitation, not an isolation guarantee.
+
+## Checkpoint roadmap
+
+| Chunk | Purpose / files | Dependencies and checkpoint | Tests / completion |
+| --- | --- | --- | --- |
+| 1 | Contract and runner: `agent/gitinspect/model.go`, runner and focused tests | M1-A; commit/push tested typed contract, bounded execution and draft PR | Cancellation, limits, sanitized failures and environment policy |
+| 2 | Isolated metadata view and local observations/parsing | Chunk 1; commit/push real fixture coverage | Clean/dirty/ignored, branch/detached/unborn, path screening and byte preservation |
+| 3 | Optional remote observation and conservative ancestry | Chunk 2; commit/push fixture and mock-transport coverage | Not requested/absent/missing/failure/timeout; all relations and incomplete evidence |
+| 4 | Security and preservation regression coverage | Chunks 1–3; commit/push any resulting corrections | Malicious helpers/config, no local network/lazy fetch, secret exclusions, source/state preservation |
+| 5 | Engine guide, human Code Review Guide, contracts and full checks | Chunks 1–4; finalize PR and tracking issue | Formatting/vet/units/race/CGO-disabled build/whitespace locally and CI, document actual limits |
+
+Chunk 1 checkpoint: typed observations, controlled runner, filtered environment, combined stdout/stderr bounds and process-group cancellation are implemented. Formatting, vet, unit tests, race tests and CGO-disabled build pass locally. The remaining engine operations are not yet implemented. Next: chunk 2, metadata isolation and local observations. Recover from Git/PR progress if interrupted; never restart completed chunks or manually squash development commits. Revert reviewed feature commits for development rollback; inspection only deletes its own ephemeral scratch.
