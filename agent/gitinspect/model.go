@@ -38,8 +38,9 @@ func failure(code Code, operation string) error { return &Error{Code: code, Oper
 type HeadState string
 
 const (
-	HeadAvailable HeadState = "available"
-	HeadUnborn    HeadState = "unborn"
+	HeadUnavailable HeadState = "unavailable"
+	HeadAvailable   HeadState = "available"
+	HeadUnborn      HeadState = "unborn"
 )
 
 type Head struct {
@@ -58,6 +59,7 @@ func (d Dirty) IsDirty() bool { return d.Staged+d.Unstaged+d.Untracked+d.Conflic
 type RemoteState string
 
 const (
+	RemoteNotObserved   RemoteState = "not_observed"
 	RemoteNotRequested  RemoteState = "not_requested"
 	RemoteNotConfigured RemoteState = "not_configured"
 	RemoteAvailable     RemoteState = "available"
@@ -89,13 +91,14 @@ type Evidence struct {
 	ObjectFormat     string
 }
 type Result struct {
-	RepositoryID string
-	Head         Head
-	Dirty        Dirty
-	Remote       Remote
-	Relation     Relation
-	Evidence     Evidence
-	ObservedAt   time.Time
+	RepositoryID   string
+	Head           Head
+	Dirty          Dirty
+	DirtyAvailable bool
+	Remote         Remote
+	Relation       Relation
+	Evidence       Evidence
+	ObservedAt     time.Time
 }
 
 // Request.Remote is the only switch that permits contacting the registered ref.
