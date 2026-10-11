@@ -1,6 +1,6 @@
 # Milestone 1 — unprivileged Git core
 
-Status: proposed implementation plan under approved D5/D6/D7 intent; documentation only. Go, system Git, versioned JSON and optional systemd were approved by the maintainer. No application code, dependencies or executable tests are added by this plan.
+Status: implementation plan under approved D5/D6/D7 intent. M1-A now implements registration as documented in the [agent guide](../../agent/README.md); all other mechanisms below remain proposals for their own review units. Go, system Git, versioned JSON and optional systemd were approved by the maintainer.
 
 ## First slice and boundaries
 
@@ -67,7 +67,9 @@ Unknown ancestry alone is a valid reported result, not a reason to fetch during 
 
 ## Registration proposal
 
-Propose host-local JSON in `/etc/homelab-manager/agent.json` for the runtime registration, parsed with Go's standard library. The [YAML example](../../examples/host-registration.yaml) is a readable illustration of the same proposed fields, not a second runtime configuration source. Topology YAML belongs to a separate Git contract and need not add a YAML dependency to the first agent slice.
+M1-A implements host-local JSON in `/etc/homelab-manager/agent.json` with a local alternate-path loader API, parsed with Go's standard library. The [agent guide](../../agent/README.md) and [JSON example](../../examples/host-registration.json) define the implemented fields and strict validation. The [YAML example](../../examples/host-registration.yaml) remains an illustration, not a second runtime configuration source. Topology YAML belongs to a separate Git contract; no YAML dependency is added.
+
+The M1-A [implementation plan](0004-agent-registration.md) makes the proposal concrete: explicit empty repository/stack collections allow non-Compose hosts; suspicious directory names produce sanitized structured warnings for future installer consent without authorizing content reads; repository roots, stack directories and declared inputs must exist, all declared symlink components are rejected, overlapping stack locations and host-wide duplicate Compose projects are disallowed, and remote spellings use a conservative allowlist. Missing capability declarations default to unprivileged Git status only; known future capability flags remain declarations, not authorization or implementation. Neither Git membership nor input completeness is verified until later units. Path validation uses metadata only and is a snapshot requiring revalidation by future operations.
 
 Fields: `schema_version: 1`, `host`, a repository map (`root`, optional `url`, `branch`), stacks (`id`, `repository`, `path`, `compose_project`, `tracked_inputs`), and explicit capabilities. Resolve each stack's branch through its repository registration; stacks tracking different branches need separate registered checkouts. Roots are absolute approved checkout roots; stack/input paths are normalized repository-relative exact files or directories. Directory inputs expand only to tracked entries. Reject escapes, unsafe symlinks and overlapping/ambiguous registrations. Shared inputs must be explicitly listed for every affected stack. An optional URL supports local Git; `--remote` on a no-remote registration reports `not_configured` without inventing a remote.
 

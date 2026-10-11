@@ -1,0 +1,36 @@
+name: Agent checks
+
+on:
+  pull_request:
+    paths:
+      - 'agent/**'
+      - 'examples/host-registration.json'
+      - '.github/workflows/agent.yml'
+  push:
+    paths:
+      - 'agent/**'
+      - 'examples/host-registration.json'
+      - '.github/workflows/agent.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: agent/go.mod
+          cache: false # Standard library only; no go.sum dependency cache.
+      - name: Install development compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends build-essential
+      - name: Formatting, static analysis, unit and race tests
+        run: agent/scripts/check.sh

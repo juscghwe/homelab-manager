@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "host": "media01",
+  "repositories": {
+    "homelab": {
+      "root": "/srv/homelab/config",
+      "url": "git@example.invalid:homelab/config.git",
+      "branch": "main"
+    }
+  },
+  "stacks": [
+    {
+      "id": "caddy",
+      "repository": "homelab",
+      "path": "compose/caddy",
+      "compose_project": "caddy",
+      "tracked_inputs": ["compose/caddy", "shared/non-secret-defaults.yaml"]
+    }
+  ],
+  "capabilities": {
+    "git_status": true,
+    "docker_status": false,
+    "docker_deploy": false,
+    "docker_stop": false,
+    "nftables_apply": false
+  }
+}
