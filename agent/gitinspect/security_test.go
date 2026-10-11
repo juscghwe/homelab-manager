@@ -253,11 +253,11 @@ func TestUnmergedFixture(t *testing.T) {
 	commitFixture(t, root, "file", "other")
 	fixtureGit(t, root, "checkout", "main")
 	commitFixture(t, root, "file", "main")
-	cmd := exec.Command("/usr/bin/git", "-c", "core.hooksPath=/dev/null", "merge", "other")
+	cmd := exec.Command("/usr/bin/git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "core.hooksPath=/dev/null", "merge", "other")
 	cmd.Dir = root
 	cmd.Env = gitEnvironment(false, nil)
-	if err := cmd.Run(); err == nil {
-		t.Fatal("fixture merge did not conflict")
+	if err := cmd.Run(); err == nil || cmd.ProcessState == nil || cmd.ProcessState.ExitCode() != 1 {
+		t.Fatalf("fixture did not produce the expected merge conflict: %v", err)
 	}
 	before := snapshot(t, root)
 	result := inspectFixture(t, root)
