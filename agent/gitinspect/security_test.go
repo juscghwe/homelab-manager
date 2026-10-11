@@ -286,3 +286,74 @@ func TestDisabledCapabilityAndTrackedSymlink(t *testing.T) {
 	_, err = e.Inspect(context.Background(), registered(t, root), "repo", Request{})
 	testError(t, err, UnsupportedRepository)
 }
+
+type recordingRunner struct {
+	local      runner
+	operations []string
+}
+
+func (r *recordingRunner) run(ctx context.Context, c command) (output, error) {
+	r.operations = append(r.operations, c.operation)
+	return r.local.run(ctx, c)
+}
+func TestExcludedInputsStopBeforeWorktreeHashing(t *testing.T) {
+	root := newRepository(t)
+	commitFixture(t, root, "nested/.env.production", "SYNTHETIC_SECRET")
+	e, _ := New(Options{})
+	recorder := &recordingRunner{local: e.runner}
+	e.runner = recorder
+	result, err := e.Inspect(context.Background(), registered(t, root), "repo", Request{Remote: true})
+	testError(t, err, UnsafePath)
+	for _, operation := range recorder.operations {
+		if operation == "status" || operation == "remote" {
+			t.Fatal("excluded tracked input reached hashing or networking")
+		}
+	}
+	if strings.Contains(fmt.Sprint(result, err), "SYNTHETIC_SECRET") || result.DirtyAvailable {
+		t.Fatal("secret leaked or unsafe result marked available")
+	}
+}
+func TestInaccessibleMetadataIsSanitized(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("permission fixture needs ordinary unprivileged user")
+	}
+	root := newRepository(t)
+	commitFixture(t, root, "file", "text")
+	reg := registered(t, root)
+	config := filepath.Join(root, ".git/config")
+	if err := os.Chmod(config, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(config, 0600) })
+	e, _ := New(Options{})
+	result, err := e.Inspect(context.Background(), reg, "repo", Request{})
+	testError(t, err, InvalidRepository)
+	if strings.Contains(err.Error(), root) || result.DirtyAvailable {
+		t.Fatal("inaccessible metadata was leaked or presented as clean")
+	}
+}
+func TestRealShallowCloneAndMissingBlob(t *testing.T) {
+	source := newRepository(t)
+	a := commitFixture(t, source, "file", "base")
+	b := commitFixture(t, source, "file", "next")
+	clone := filepath.Join(t.TempDir(), "clone")
+	fixtureGit(t, source, "clone", "--depth=1", "--no-local", "file://"+source, clone) // Trusted fixture only.
+	e, _ := New(Options{})
+	reg := registered(t, clone)
+	local, err := e.Inspect(context.Background(), reg, "repo", Request{})
+	if err != nil || !local.Evidence.Shallow || local.Dirty.IsDirty() {
+		t.Fatalf("shallow clone: %+v %v", local, err)
+	}
+	relation, err := e.Compare(context.Background(), reg, "repo", b, a)
+	if err != nil || relation.Relation != Unknown {
+		t.Fatalf("shallow relation: %+v %v", relation, err)
+	}
+	blob := fixtureGit(t, source, "rev-parse", b+":file")
+	if err := os.Remove(filepath.Join(source, ".git/objects", blob[:2], blob[2:])); err != nil {
+		t.Fatal(err)
+	}
+	relation, err = e.Compare(context.Background(), registered(t, source), "repo", b, a)
+	if err != nil || relation.Relation != Unknown || relation.Reason != MissingObjects {
+		t.Fatalf("missing blob: %+v %v", relation, err)
+	}
+}
