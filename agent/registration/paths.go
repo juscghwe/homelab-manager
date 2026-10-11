@@ -25,14 +25,8 @@ func safePath(s string) bool {
 		if part == ".." || strings.HasPrefix(part, "-") {
 			return false
 		}
-		p := strings.ToLower(part)
-		if p == ".git" || p == ".ssh" || p == ".env" || strings.HasPrefix(p, ".env.") {
+		if ContentExcluded(part) {
 			return false
-		}
-		for _, ext := range []string{".key", ".pem", ".p12", ".pfx"} {
-			if strings.HasSuffix(p, ext) {
-				return false
-			}
 		}
 	}
 	return true
@@ -91,4 +85,22 @@ func pathError(err error, field string) error {
 		return fail(MissingPath, field)
 	}
 	return fail(InvalidPath, field)
+}
+
+// ContentExcluded is the shared filename policy for paths whose contents must
+// never be read/hashed for inspection. Suspicious names alone are not excluded.
+// This does not detect arbitrarily named secrets or replace boundary validation.
+func ContentExcluded(path string) bool {
+	for _, part := range strings.Split(path, "/") {
+		p := strings.ToLower(part)
+		if p == ".git" || p == ".ssh" || p == ".env" || strings.HasPrefix(p, ".env.") {
+			return true
+		}
+		for _, ext := range []string{".key", ".pem", ".p12", ".pfx"} {
+			if strings.HasSuffix(p, ext) {
+				return true
+			}
+		}
+	}
+	return false
 }

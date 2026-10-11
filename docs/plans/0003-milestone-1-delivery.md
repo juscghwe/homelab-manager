@@ -1,6 +1,6 @@
 # Milestone 1 — delivery and review plan
 
-Status: planning approved in PR #7; M1-A registration is implemented for review in its feature branch. M1-B through M1-F remain unimplemented. See the [M1-A implementation plan](0004-agent-registration.md) and [agent guide](../../agent/README.md). The umbrella issue linked below is the permanent checklist; proposed mechanisms in [plan 0002](0002-agent-git-core.md) retain their individual review gates.
+Status: planning approved in PR #7; M1-A registration is merged through PR #8. M1-B inspection is implemented for review in PR #10; M1-C through M1-F remain unimplemented. See [inspection plan 0005](0005-git-inspection.md) and its [engine review guide](../../agent/gitinspect/README.md). See the [M1-A implementation plan](0004-agent-registration.md) and [agent guide](../../agent/README.md). The umbrella issue linked below is the permanent checklist; proposed mechanisms in [plan 0002](0002-agent-git-core.md) retain their individual review gates.
 
 Permanent tracking bundle: [Milestone 1 — Agent Git Core](https://github.com/juscghwe/homelab-manager/issues/6). Update its child-PR checklist when work starts, changes base or merges.
 

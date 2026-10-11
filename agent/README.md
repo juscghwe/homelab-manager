@@ -1,6 +1,6 @@
-# Agent registration (M1-A)
+# Agent libraries (M1-A / M1-B)
 
-The first implemented component is a **library**, `registration`, using Go **1.27.2** and only the standard library. Linux is the supported host platform; the file loader is Linux-specific. No agent command, Git inspection, state/history, preparation, Docker/firewall operation, daemon or network API exists yet. The module path is `github.com/juscghwe/homelab-manager/agent`.
+The first implemented component is a **library**, `registration`, using Go **1.27.2** and only the standard library. Linux is the supported host platform; the file loader is Linux-specific. M1-B adds the [read-only Git inspection library](gitinspect/README.md). No agent command, state/history, preparation, Docker/firewall operation, daemon or network API exists yet. The module path is `github.com/juscghwe/homelab-manager/agent`.
 
 ## Local loader and package boundary
 
@@ -16,13 +16,13 @@ if err != nil {
 }
 for _, id := range reg.RepositoryIDs() {
     repo, _ := reg.Repository(id)
-    _ = repo // validated declaration for the future M1-B inspection engine
+    _ = repo // validated declaration for the M1-B inspection engine
 }
 ```
 
 Import `registration` from the module path above and `errors` from the standard library. `Load` decodes and validates. `Decode(io.Reader) (Config, error)` performs bounded JSON/schema-shape validation only, without filesystem access; its output is not yet safe for operations. `Validate(Config) (*Registration, error)` validates and normalizes a copy using filesystem metadata. Programmatic Config values have their explicit booleans respected; only Decode applies omitted-field defaults.
 
-A successful `Registration` exposes `Host`, `Capabilities`, sorted `RepositoryIDs`/`StackIDs`, structured `Warnings`, and `Repository(id)`/`Stack(id)` lookups. Returned slices are copies, so callers cannot mutate the validated snapshot. No global configuration or future operation stubs are provided. M1-B will consume these registered identities, roots and refs through the accessors and implement its own trusted Git execution policy. It must revalidate mutable filesystem state before use.
+A successful `Registration` exposes `Host`, `Capabilities`, sorted `RepositoryIDs`/`StackIDs`, structured `Warnings`, and `Repository(id)`/`Stack(id)` lookups. Returned slices are copies, so callers cannot mutate the validated snapshot. No global configuration or future operation stubs are provided. M1-B consumes these registered identities, roots and refs through the accessors and applies its documented trusted Git execution policy. It revalidates mutable filesystem state before use. `registration.ContentExcluded(path)` exposes the existing filename exclusion policy for pre-hashing checks; it does not establish content eligibility.
 
 ## Runtime JSON schema
 
@@ -98,6 +98,6 @@ CGO_ENABLED=1 go test -race ./...
 CGO_ENABLED=0 go build ./...
 ```
 
-The race detector requires cgo and a working compatible C compiler (GCC or Clang, selectable with `CC`). If none is installed locally, run formatting, vet, unit tests and the CGO-disabled build separately and explicitly record local race testing as unavailable; the full CI script still requires and executes race tests on Ubuntu. The library does not require development build tools at runtime. Tests use only temporary directories and synthetic data; they do not invoke Git, contact remotes or access actual host registration/Docker/firewall state. Coverage includes schema ambiguity, capability defaults, empty/firewall-only hosts, multiple repos/stacks/shared inputs, structured suspicious-path warnings, normalized duplicates, deterministic errors, traversal/symlinks, FIFO rejection, unreadable input files, error redaction and snapshot isolation. A `FuzzDecode` target exercises bounded JSON parsing separately from filesystem validation.
+The race detector requires cgo and a working compatible C compiler (GCC or Clang, selectable with `CC`). If none is installed locally, run formatting, vet, unit tests and the CGO-disabled build separately and explicitly record local race testing as unavailable; the full CI script still requires and executes race tests on Ubuntu. The library does not require development build tools at runtime. Registration tests use temporary directories and synthetic data without invoking Git. Inspection tests use disposable Git repositories and controlled loopback/mock transport; neither suite accesses actual host registration/Docker/firewall state. Coverage includes schema ambiguity, capability defaults, empty/firewall-only hosts, multiple repos/stacks/shared inputs, structured suspicious-path warnings, normalized duplicates, deterministic errors, traversal/symlinks, FIFO rejection, unreadable input files, error redaction and snapshot isolation. A `FuzzDecode` target exercises bounded JSON parsing separately from filesystem validation.
 
 Review details and recovery are in [M1-A implementation plan](../docs/plans/0004-agent-registration.md). Subsequent units remain separate PRs under [the delivery plan](../docs/plans/0003-milestone-1-delivery.md).

@@ -1,6 +1,6 @@
 # Milestone 1 — unprivileged Git core
 
-Status: implementation plan under approved D5/D6/D7 intent. M1-A now implements registration as documented in the [agent guide](../../agent/README.md); all other mechanisms below remain proposals for their own review units. Go, system Git, versioned JSON and optional systemd were approved by the maintainer.
+Status: implementation plan under approved D5/D6/D7 intent. M1-A now implements registration as documented in the [agent guide](../../agent/README.md); M1-B implements inspection in [its engine guide](../../agent/gitinspect/README.md), pending feature review. Other mechanisms below remain proposals for their own review units. Go, system Git, versioned JSON and optional systemd were approved by the maintainer.
 
 ## First slice and boundaries
 
@@ -77,6 +77,8 @@ Capabilities default off except unprivileged Git status. Authorization-sensitive
 
 ## Read-only Git mechanics
 
+M1-B concretizes this proposal in [plan 0005](0005-git-inspection.md) and the [engine guide](../../agent/gitinspect/README.md): private bounded metadata rather than loading repository executable configuration, a narrow trusted authentication policy, pre-hashing exclusions/index checks, and explicit unsupported layouts. This is inspection scratch, not the proposed candidate object store. Concurrent hostile filesystem replacement remains outside its confinement guarantees and requires maintainer review.
+
 Use fixed subprocess argument vectors, optional locks disabled, noninteractive trusted transport and bounded timeouts. Inspect HEAD, index/worktree categories and existing objects without updating the index, refs or checkout. Use NUL-delimited machine-readable Git output and handle unusual filenames without parsing human output. Never run arbitrary repository-selected diff/textconv, hooks, filters, credential helpers or transports; define an explicit trusted transport/config allowlist without disabling TLS/SSH host verification or platform-injected authentication. Acquisition must not trigger lazy partial-clone fetching during a supposedly local command; disable implicit fetching or return unsupported/unavailable for incomplete repositories.
 
 `--remote` invokes only `ls-remote` on the registered remote/ref. Missing remote ref differs from transport failure. Determine ancestry only from complete relevant objects already present; shallow boundaries, missing objects and incomplete history yield `unknown`, not false divergence. Two-way ancestry checks distinguish ahead/behind/diverged only with enough history. Status never deepens/fetches. Dirty checks cover the whole registered repository, even when configuration impact is stack-specific.
@@ -113,4 +115,4 @@ Implement the [Milestone 1 fixture matrix](../PLANS.md#1--agent-only-git-core), 
 
 Main risks are implicit Git side effects, untrusted execution helpers, false ancestry, secret-derived reporting and confusing prepared with applied. Contain them through fixed arguments, explicit availability and fixture assertions. Recovery for status is simply stopping the command: it writes no state. Later preparation failures remove only incomplete tool-owned candidate state; never reset or clean a user's checkout. A development rollback is a normal revert, not rewriting history.
 
-Remaining explicit maintainer review concerns privileged helper trust, remote authentication, health/confirmation policy and firewall recovery from plan 0001. They do not block the read-only Git-status slice. Document actual tests when code is implemented; none has run for this plan.
+Remaining explicit maintainer review concerns privileged helper trust, remote authentication, health/confirmation policy and firewall recovery from plan 0001. They do not block the read-only Git-status slice. Actual registration and inspection test results belong to their implementation plans/PRs; the CLI/state/preparation mechanisms above remain unimplemented.
